@@ -4,8 +4,9 @@
 pragma solidity ^0.8.20;
 
 import "./2048GameToken.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract ContractV2 {
+contract ContractV2 is Ownable {
     /* 枚举声明 */
     enum Direction {
         left,
@@ -45,10 +46,6 @@ contract ContractV2 {
     uint256 public lastRewardAmount;
     GameTokenContract public tokenContract;
 
-    /* 内部变量 */
-
-    /* 私有变量 */
-
     /* 映射和数组 */
     mapping(address => uint16[4][4]) public games;
     mapping(address => bool) public activeGames;
@@ -56,7 +53,7 @@ contract ContractV2 {
     Players[10] public lastTop10Players;
 
     /* 构造函数 */
-    constructor() {
+    constructor() Ownable(msg.sender) {
         tokenContract = new GameTokenContract(address(this));
     }
 
@@ -113,7 +110,7 @@ contract ContractV2 {
     }
 
     // 设置新赛季并结算旧赛季,玩家需在新赛季结束前cliam上赛季奖励，否则奖励将失效
-    function setSeason(uint256 _rewardAmount) public {
+    function setSeason(uint256 _rewardAmount) public onlyOwner {
         season++;
         lastRewardAmount = rewardAmount;
         rewardAmount = _rewardAmount;
@@ -166,8 +163,6 @@ contract ContractV2 {
         emit Slide(msg.sender, _direction);
     }
 
-    /* 外部函数*/
-
     /* 内部函数 */
     // 更新玩家的分数并更新排行榜
     function _updateScore(address player, uint256 newScore) internal {
@@ -207,6 +202,11 @@ contract ContractV2 {
                     top10Players[j + 1] = _top10Players[j];
                 }
             }
+        }
+
+        // 更新实际的 top10Players 数组
+        for (uint256 i = 0; i < top10Players.length; i++) {
+            top10Players[i] = _top10Players[i];
         }
     }
 
@@ -318,8 +318,6 @@ contract ContractV2 {
             }
         }
     }
-
-    /* 私有函数 */
 
     /* 视图函数 */
     function _getCoefficent() public view returns (uint256) {
